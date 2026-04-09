@@ -28,6 +28,8 @@ export type ScenarioType = "apple" | "strawberry" | "subsidy" | "translation" | 
 interface ChatDemoProps {
   scenario?: ScenarioType | null;
   onBack?: () => void;
+  onFlowComplete?: () => void;
+  showBackTooltip?: boolean;
 }
 
 const P: React.CSSProperties = { fontFamily: "'Pretendard', sans-serif" };
@@ -71,7 +73,8 @@ type Step =
   | { at: number; kind: "voice-open" }
   | { at: number; kind: "voice-close" }
   | { at: number; kind: "ai-farming-step1" }
-  | { at: number; kind: "farming-choose"; value: "yes" | "no" };
+  | { at: number; kind: "farming-choose"; value: "yes" | "no" }
+  | { at: number; kind: "notify-done" };
 
 // ─── Scenario first messages ──────────────────────────────────────────────────
 const SCENARIO_FIRST_MESSAGES: Record<ScenarioType,
@@ -405,7 +408,7 @@ function TD(text: string): number {
 }
 
 // ─── Main ChatDemo ────────────────────────────────────────────────────────────
-export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
+export function ChatDemo({ scenario, onBack, onFlowComplete, showBackTooltip }: ChatDemoProps) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeFlow, setActiveFlow] = useState<ScenarioType | null>(null);
@@ -517,6 +520,10 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
         if (step.kind === "voice-open") { setShowVoice(true); return; }
         if (step.kind === "voice-close") { setShowVoice(false); return; }
         if (step.kind === "ai-farming-step1") { addMsg({ kind: "ai-farming-step1" }); return; }
+        if (step.kind === "notify-done") {
+          onFlowComplete?.();
+          return;
+        }
         if (step.kind === "farming-choose") {
           setFarmingChoice(step.value);
           addMsg({ kind: "user-text", text: step.value === "yes" ? "네, 수요일로 조정할게요" : "아니오" });
@@ -586,6 +593,8 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       // 답변 출처 버튼 탭 플로우
       t += 1500;
       s.push({ at: t, kind: "open-source-sheet", srcType: "disease" });
+      t += 2500;
+      s.push({ at: t, kind: "notify-done" });
 
       runSteps(s);
     }
@@ -627,6 +636,8 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       // 답변 출처 버튼 탭 플로우
       t += 1500;
       s.push({ at: t, kind: "open-source-sheet", srcType: "disease" });
+      t += 2500;
+      s.push({ at: t, kind: "notify-done" });
 
       runSteps(s);
     }
@@ -672,6 +683,8 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       s.push({ at: t, kind: "loading-on" });
       t += SR; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <SubsidyResultContent onSrc={() => openSrc("subsidy")} /> });
+      t += 2500;
+      s.push({ at: t, kind: "notify-done" });
 
       runSteps(s);
     }
@@ -696,6 +709,8 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       t += L; s.push({ at: t, kind: "loading-on" });
       t += SR; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <TranslationStep2Content /> });
+      t += 2500;
+      s.push({ at: t, kind: "notify-done" });
 
       runSteps(s);
     }
@@ -712,6 +727,9 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       // 자동으로 "네" 선택
       t += 2200;
       s.push({ at: t, kind: "farming-choose", value: "yes" });
+      // farming-choose 내부에서 L+R 후 FarmingStep2Content 추가됨
+      t += L + R + 1500;
+      s.push({ at: t, kind: "notify-done" });
 
       runSteps(s);
     }
@@ -863,6 +881,44 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
 
       {showVoice && <VoiceOverlay onClose={() => setShowVoice(false)} transcriptionText={inputValue || undefined} />}
       {showSources && <SourceSheet onClose={() => setShowSources(false)} type={srcType} />}
+
+      {/* Back button tooltip for mobile */}
+      {showBackTooltip && (
+        <div
+          className="absolute z-40 pointer-events-none"
+          style={{ top: 74, left: 10 }}
+        >
+          {/* Arrow pointing up to back button */}
+          <div style={{
+            width: 0,
+            height: 0,
+            borderLeft: "7px solid transparent",
+            borderRight: "7px solid transparent",
+            borderBottom: "7px solid #3170e2",
+            marginLeft: 10,
+          }} />
+          <div style={{
+            background: "#3170e2",
+            borderRadius: 10,
+            paddingTop: 8,
+            paddingBottom: 8,
+            paddingLeft: 12,
+            paddingRight: 12,
+            boxShadow: "0 4px 16px rgba(49,112,226,0.30)",
+            animation: "tooltipFadeIn 0.35s ease",
+          }}>
+            <p style={{ ...P, fontWeight: 600, fontSize: 13, color: "white", whiteSpace: "nowrap" }}>
+              다른 시나리오도 해보세요! 👆
+            </p>
+          </div>
+          <style>{`
+            @keyframes tooltipFadeIn {
+              from { opacity: 0; transform: translateY(-6px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }

@@ -70,6 +70,8 @@ export default function App() {
   const [homePendingImageType, setHomePendingImageType] = useState<"apple" | "strawberry-fruit" | "strawberry-leaf" | null>(null);
   const [showHomeVoice, setShowHomeVoice] = useState(false);
   const [homeVoiceText, setHomeVoiceText] = useState("");
+  const [showMobileHome, setShowMobileHome] = useState(false);
+  const [showBackTooltip, setShowBackTooltip] = useState(false);
   const homeTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   function clearHomeTimers() {
@@ -83,6 +85,7 @@ export default function App() {
     clearHomeTimers();
     setShowHomeVoice(false);
     setHomeVoiceText("");
+    setShowBackTooltip(false);
 
     if (id === "farming") {
       // 타이핑 없이 바로 홈에서 음성 오버레이
@@ -155,8 +158,10 @@ export default function App() {
 
   const handleBack = () => {
     setShowChat(false);
+    setShowBackTooltip(false);
     if (isMobile) {
-      setActiveScenario(null); // 모바일에서는 시나리오 선택 화면으로 돌아감
+      setShowMobileHome(false); // 시나리오 선택 화면으로 돌아감
+      setActiveScenario(null);
     }
   };
 
@@ -221,15 +226,22 @@ export default function App() {
       key={activeScenario}
       scenario={activeScenario}
       onBack={handleBack}
+      onFlowComplete={() => { if (isMobile) setShowBackTooltip(true); }}
+      showBackTooltip={showBackTooltip}
     />
   );
 
   // ── Mobile layout ────────────────────────────────────────────────────────────
   if (isMobile) {
+    // 채팅 중
     if (showChat) {
       return <div style={{ width: "100%", maxWidth: 430 }}>{chatView}</div>;
     }
-    // 모바일 첫 화면: 시나리오 선택
+    // 버튼 누른 후 → 홈 메인 (타이핑 애니메이션)
+    if (showMobileHome) {
+      return <div style={{ width: "100%", maxWidth: 430 }}>{homeView}</div>;
+    }
+    // 첫 화면: 시나리오 선택
     return (
       <div
         style={{
@@ -260,8 +272,8 @@ export default function App() {
             <button
               key={btn.id}
               onClick={() => {
-                setActiveScenario(btn.id);
-                setShowChat(true);
+                setShowMobileHome(true);     // 홈 메인 화면으로
+                handleScenarioSelect(btn.id); // 타이핑 → 자동으로 채팅 전환
               }}
               style={{
                 display: "flex",
