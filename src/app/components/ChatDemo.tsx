@@ -80,7 +80,7 @@ const SCENARIO_FIRST_MESSAGES: Record<ScenarioType,
   | { kind: "none" }
 > = {
   apple: { kind: "text", text: "사과 표면에 갈색 반점이 생기는데 무슨 병인가요?" },
-  strawberry: { kind: "image", imageType: "strawberry-fruit", text: "최근에 비가 내린 후로 상태가 이상해졌어." },
+  strawberry: { kind: "none" }, // 홈 패널 → 채팅에서 이미지 첨부 순서로 시작
   subsidy: { kind: "text", text: "받을 수 있는 보조금 확인하기" },
   translation: { kind: "text", text: "내일 오전 9시부터 씨감자 심기 베트남어로" },
   farming: { kind: "text", text: "오늘 딸기밭에 물 주고, 어제 산 비료 5킬로 사용했어." }, // 홈 음성 → 채팅에 바로 표시
@@ -276,36 +276,32 @@ function FarmingStep1Content({
       <div className="flex flex-col gap-[10px]">
         <AlertCard emoji="⚡️" title="주의" message="다음 주 화요일에는 비가 내릴 예정입니다. ☔ 후속 물주기 날짜를 수요일로 조정하시겠어요?" />
         <div className="flex flex-wrap gap-[6px]">
-          {/* 네 버튼 — ChipGroup 동일 스타일 */}
-          <button
-            onClick={() => onChoose("yes")}
-            disabled={chosen && farmingChoice !== "yes"}
-            className="px-[12px] py-[7px] rounded-full border transition-all duration-150"
-            style={{
-              borderColor: farmingChoice === "yes" ? "#3170e2" : chosen ? "#e0e0e0" : "#ddd",
-              background: farmingChoice === "yes" ? "#ebf1ff" : chosen ? "#f5f5f5" : "white",
-              opacity: chosen && farmingChoice !== "yes" ? 0.4 : 1,
-            }}
-          >
-            <p style={{ ...P, fontWeight: farmingChoice === "yes" ? 600 : 400, fontSize: 13, lineHeight: 1, color: farmingChoice === "yes" ? "#3170e2" : chosen ? "#bbb" : "#444" }}>
-              네, 수요일로 조정할게요
-            </p>
-          </button>
-          {/* 아니오 버튼 */}
-          <button
-            onClick={() => onChoose("no")}
-            disabled={chosen && farmingChoice !== "no"}
-            className="px-[12px] py-[7px] rounded-full border transition-all duration-150"
-            style={{
-              borderColor: farmingChoice === "no" ? "#3170e2" : chosen ? "#e0e0e0" : "#ddd",
-              background: farmingChoice === "no" ? "#ebf1ff" : chosen ? "#f5f5f5" : "white",
-              opacity: chosen && farmingChoice !== "no" ? 0.4 : 1,
-            }}
-          >
-            <p style={{ ...P, fontWeight: farmingChoice === "no" ? 600 : 400, fontSize: 13, lineHeight: 1, color: farmingChoice === "no" ? "#3170e2" : chosen ? "#bbb" : "#444" }}>
-              아니오
-            </p>
-          </button>
+          {(["yes", "no"] as const).map((v) => {
+            const isSelected = farmingChoice === v;
+            const isInactive = chosen && !isSelected;
+            return (
+              <button
+                key={v}
+                onClick={() => onChoose(v)}
+                disabled={isInactive}
+                className="px-[12px] py-[7px] rounded-full border transition-all duration-150"
+                style={{
+                  borderColor: isSelected ? "#3170e2" : isInactive ? "#e8e8e8" : "#ddd",
+                  background: isSelected ? "#ebf1ff" : isInactive ? "#f5f5f5" : "white",
+                }}
+              >
+                <p style={{
+                  ...P,
+                  fontWeight: isSelected ? 600 : 400,
+                  fontSize: 13,
+                  lineHeight: 1,
+                  color: isSelected ? "#3170e2" : isInactive ? "#ccc" : "#444",
+                }}>
+                  {v === "yes" ? "네, 수요일로 조정할게요" : "아니오"}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -586,13 +582,19 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
     }
 
     else if (id === "strawberry") {
+      const TEXT1 = "최근에 비가 내린 후로 상태가 이상해졌어.";
       const TEXT2 = "추가 사진이에요. 더 확인해줘.";
 
       let t = 0;
       const s: Step[] = [];
 
-      // 첫 번째 이미지는 이미 마운트시 추가됨, 바로 loading
-      s.push({ at: t, kind: "loading-on" });
+      // 첫 번째 이미지: 홈 패널 완료 후 채팅 진입 → 이미지 프리뷰 바로 표시 → 타이핑 → 전송
+      s.push({ at: t, kind: "panel-image-preview", imageType: "strawberry-fruit" });
+      t += 200;
+      s.push({ at: t, kind: "input-type", text: TEXT1, duration: TD(TEXT1) });
+      t += TD(TEXT1) + SEND_P;
+      s.push({ at: t, kind: "user-image", imageType: "strawberry-fruit", text: TEXT1 });
+      t += L; s.push({ at: t, kind: "loading-on" });
       t += R; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <StrawberryStage1Content onSrc={() => openSrc("disease")} /> });
       t += N;
