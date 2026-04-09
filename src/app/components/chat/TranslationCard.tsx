@@ -1,7 +1,5 @@
 import { useState } from "react";
 
-const P: React.CSSProperties = { fontFamily: "'Pretendard', sans-serif" };
-
 function SpeakerIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -25,10 +23,9 @@ interface TranslationCardProps {
   targetLang: string;
   targetText: string;
   sourceText: string;
-  isManual?: boolean;
 }
 
-export function TranslationCard({ targetLang, targetText, sourceText, isManual }: TranslationCardProps) {
+export function TranslationCard({ targetText, sourceText }: TranslationCardProps) {
   const [copied, setCopied] = useState(false);
   const [speaking, setSpeaking] = useState(false);
 
@@ -45,55 +42,29 @@ export function TranslationCard({ targetLang, targetText, sourceText, isManual }
 
   return (
     <div className="w-full rounded-[12px] border border-[#e8e8e8] bg-white overflow-hidden">
-      {/* Lang header */}
-      <div className="flex items-center gap-[8px] px-[14px] py-[10px] border-b border-[#f0f0f0] bg-[#fafafa]">
-        <span className="text-[16px]">{targetLang === "베트남어" ? "🇻🇳" : "🌐"}</span>
-        <p style={{ ...P, fontWeight: 600, fontSize: 13, color: "#333" }}>{targetLang}</p>
-        <div className="ml-auto flex items-center gap-[8px]">
-          {/* Speaker button */}
-          <button
-            onClick={handleSpeak}
-            className={`flex items-center justify-center w-[28px] h-[28px] rounded-full transition-colors ${speaking ? "bg-[#dce8ff]" : "bg-[#f0f5ff] hover:bg-[#dce8ff]"}`}
-            title="읽어주기"
-          >
+      <div className="flex flex-col gap-[12px] p-[14px]">
+        {/* Speaker + 번역 텍스트 */}
+        <div className="flex items-start gap-[10px]">
+          <button onClick={handleSpeak} className={`mt-[3px] shrink-0 w-[28px] h-[28px] rounded-full flex items-center justify-center transition-colors ${speaking ? "bg-[#dce8ff]" : "bg-[#ebf1ff]"}`}>
             <SpeakerIcon />
           </button>
-          {/* Copy button */}
-          <button
-            onClick={handleCopy}
-            className={`flex items-center justify-center w-[28px] h-[28px] rounded-full transition-colors ${copied ? "bg-[#dce8ff]" : "bg-[#f0f5ff] hover:bg-[#dce8ff]"}`}
-            title="복사"
-          >
-            {copied ? (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8L6.5 11.5L13 5" stroke="#3170e2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            ) : <CopyIcon />}
-          </button>
+          <p style={{ fontFamily: "'Pretendard',sans-serif", fontWeight: 700, fontSize: 15, color: "#3170e2", lineHeight: 1.7, whiteSpace: "pre-line" }}>
+            {targetText}
+          </p>
         </div>
-      </div>
-
-      <div className="flex flex-col gap-[10px] px-[14px] py-[12px]">
-        {/* Translation text */}
-        <p style={{ ...P, fontWeight: 500, fontSize: 14, color: "#222", lineHeight: 1.7, whiteSpace: "pre-line" }}>
-          {targetText}
-        </p>
-
-        {/* Divider */}
-        <div className="w-full h-px bg-[#f0f0f0]" />
-
-        {/* Original source text */}
-        <p style={{ ...P, fontWeight: 400, fontSize: 13, color: "#777", lineHeight: 1.6, whiteSpace: "pre-line" }}>
+        {/* 구분선 */}
+        <div className="h-px bg-[#f0f0f0]" />
+        {/* 원문 */}
+        <p style={{ fontFamily: "'Pretendard',sans-serif", fontWeight: 400, fontSize: 13, color: "#888", lineHeight: 1.6, whiteSpace: "pre-line" }}>
           {sourceText}
         </p>
-
-        {/* Bottom action */}
-        <button className="flex items-center gap-[4px] w-fit">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 4H12M2 7H8M2 10H10" stroke="#3170e2" strokeWidth="1.2" strokeLinecap="round"/>
-          </svg>
-          <p style={{ ...P, fontWeight: 500, fontSize: 12, color: "#3170e2" }}>
-            {isManual ? "단계별 보기" : "번역 바꾸기"}
+      </div>
+      {/* 복사 footer */}
+      <div className="border-t border-[#f0f0f0] px-[14px] py-[10px]">
+        <button onClick={handleCopy} className="flex items-center gap-[6px]">
+          <CopyIcon />
+          <p style={{ fontFamily: "'Pretendard',sans-serif", fontWeight: 500, fontSize: 13, color: copied ? "#22c55e" : "#3170e2" }}>
+            {copied ? "복사됨!" : "번역 내용 복사하기"}
           </p>
         </button>
       </div>

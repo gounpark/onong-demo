@@ -39,13 +39,14 @@ function getTimestamp() {
 }
 
 // ─── Message types ────────────────────────────────────────────────────────────
-type MsgKind = "user-text" | "user-image" | "ai";
+type MsgKind = "user-text" | "user-image" | "ai" | "ai-subsidy";
 interface ChatMsg {
   id: string;
   kind: MsgKind;
   text?: string;
   imageType?: "apple" | "strawberry-fruit" | "strawberry-leaf";
   content?: React.ReactNode;
+  subsidyStepIndex?: number;
   ts: string;
 }
 
@@ -56,12 +57,24 @@ type Step =
   | { at: number; kind: "loading-on" }
   | { at: number; kind: "loading-off" }
   | { at: number; kind: "ai"; content: React.ReactNode }
+  | { at: number; kind: "ai-subsidy"; stepIndex: number }
+  | { at: number; kind: "chip-select"; stepIndex: number; value: string }
   | { at: number; kind: "input-type"; text: string; duration: number }
   | { at: number; kind: "input-clear" }
   | { at: number; kind: "panel-open" }
   | { at: number; kind: "panel-close" }
   | { at: number; kind: "panel-highlight"; option: "camera" | "image" | "file" }
   | { at: number; kind: "panel-image-preview"; imageType: "apple" | "strawberry-fruit" | "strawberry-leaf" };
+
+// ─── Scenario first messages ──────────────────────────────────────────────────
+const SCENARIO_FIRST_MESSAGES: Record<ScenarioType, { kind: "text"; text: string } | { kind: "none" }> = {
+  apple: { kind: "text", text: "사과 표면에 갈색 반점이 생기는데 무슨 병인가요?" },
+  strawberry: { kind: "none" }, // 딸기는 사진으로 시작
+  subsidy: { kind: "text", text: "받을 수 있는 보조금 확인하기" },
+  translation: { kind: "text", text: "내일 오전 9시부터 씨감자 심기 베트남어로" },
+  farming: { kind: "text", text: "오늘 딸기밭에 물 주고, 어제 산 비료 5킬로 사용했어." },
+  faq: { kind: "text", text: "자주 묻는 질문 알려줘" },
+};
 
 // ─── AI Content components ────────────────────────────────────────────────────
 function AppleDiagnosisContent({ onSrc }: { onSrc: () => void }) {
@@ -146,7 +159,7 @@ function StrawberryStage2Content({ onSrc }: { onSrc: () => void }) {
   );
 }
 
-function SubsidyStep1Content() {
+function SubsidyStep1Content({ selected }: { selected?: string }) {
   return (
     <div className="flex flex-col gap-[12px] w-full">
       <AITextResponse>
@@ -154,35 +167,35 @@ function SubsidyStep1Content() {
       </AITextResponse>
       <div className="flex flex-col gap-[8px]">
         <p style={{ ...P, fontWeight: 500, fontSize: 13, color: "#333" }}>어떤 지역에서 활동하고 있나요?</p>
-        <ChipGroup chips={["전국","경기","강원","충북","충남","전북","경북","경남","제주","직접입력"]} selected="충남" />
+        <ChipGroup chips={["전국","경기","강원","충북","충남","전북","경북","경남","제주","직접입력"]} selected={selected} />
       </div>
     </div>
   );
 }
 
-function SubsidyStep2Content() {
+function SubsidyStep2Content({ selected }: { selected?: string }) {
   return (
     <div className="flex flex-col gap-[12px] w-full">
       <AITextResponse><p>어떤 분야에 종사하고 계신가요?</p></AITextResponse>
-      <ChipGroup chips={["농업","축산업","임업","기타"]} selected="농업" />
+      <ChipGroup chips={["농업","축산업","임업","기타"]} selected={selected} />
     </div>
   );
 }
 
-function SubsidyStep3Content() {
+function SubsidyStep3Content({ selected }: { selected?: string }) {
   return (
     <div className="flex flex-col gap-[12px] w-full">
       <AITextResponse><p>대상유형을 알려주세요</p></AITextResponse>
-      <ChipGroup chips={["청년농업인","고령 농업인","초보농업인","귀농귀촌자","기타"]} selected="청년농업인" />
+      <ChipGroup chips={["청년농업인","고령 농업인","초보농업인","귀농귀촌자","기타"]} selected={selected} />
     </div>
   );
 }
 
-function SubsidyStep4Content() {
+function SubsidyStep4Content({ selected }: { selected?: string }) {
   return (
     <div className="flex flex-col gap-[12px] w-full">
       <AITextResponse><p>최근에 신청을 희망하시나요, 아니면 예정이신가요?</p></AITextResponse>
-      <ChipGroup chips={["현재모집 중","신청 예정"]} selected="신청 예정" />
+      <ChipGroup chips={["현재모집 중","신청 예정"]} selected={selected} />
     </div>
   );
 }
@@ -221,7 +234,6 @@ function TranslationStep2Content({ onSrc }: { onSrc: () => void }) {
         targetLang="베트남어"
         targetText={"Quản lý OOO sẽ giải thích cách trồng vào ngày mai:\n1. Hãy sử dụng khoai tây gừng đã mọc mầm.\n2. Đào lỗ cách nhau khoảng 30cm.\n3. Đặt khoai vào lỗ rồi lấp đất lại.\n4. Tưới nước đầy đủ."}
         sourceText={"OOO매니저 내일 심는 법:\n1. 싹이 튼 비강자를 사용해.\n2. 30cm 간격으로 줄에 놓고 심어줘.\n3. 뿌리 넣고 흙으로 덮어줘.\n4. 물을 충분히 줘."}
-        isManual
       />
       <SourceBadge onOpen={onSrc} type="subsidy" />
     </div>
@@ -374,6 +386,7 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
   const [farmingAdjusted, setFarmingAdjusted] = useState(false);
   const [highlightedPanel, setHighlightedPanel] = useState<"camera" | "image" | "file" | null>(null);
   const [pendingImageType, setPendingImageType] = useState<"apple" | "strawberry-fruit" | "strawberry-leaf" | null>(null);
+  const [subsidySelections, setSubsidySelections] = useState<(string | undefined)[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -391,6 +404,7 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
     setInputValue("");
     setHighlightedPanel(null);
     setPendingImageType(null);
+    setSubsidySelections([]);
   }
 
   function addMsg(msg: Omit<ChatMsg, "id" | "ts">) {
@@ -429,6 +443,18 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
           return;
         }
         if (step.kind === "ai") { addMsg({ kind: "ai", content: step.content }); return; }
+        if (step.kind === "ai-subsidy") {
+          addMsg({ kind: "ai-subsidy", subsidyStepIndex: step.stepIndex });
+          return;
+        }
+        if (step.kind === "chip-select") {
+          setSubsidySelections(prev => {
+            const next = [...prev];
+            next[step.stepIndex] = step.value;
+            return next;
+          });
+          return;
+        }
         if (step.kind === "panel-open") { setIsExpanded(true); return; }
         if (step.kind === "panel-close") { setIsExpanded(false); setHighlightedPanel(null); return; }
         if (step.kind === "panel-highlight") { setHighlightedPanel(step.option); return; }
@@ -456,26 +482,23 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
 
   function triggerFlow(id: ScenarioType) {
     clearAll();
-    setMessages([]);
     setIsLoading(false);
     setFarmingAdjusted(false);
     setActiveFlow(id);
 
     if (id === "apple") {
-      const TEXT1 = "사과 표면에 갈색 반점이 생기는데 무슨 병인가요?";
       const TEXT2 = "증상이 다른거 같아. 사진을 보여줄게";
 
       let t = 0;
       const s: Step[] = [];
 
-      s.push({ at: t, kind: "input-type", text: TEXT1, duration: TD(TEXT1) });
-      t += TD(TEXT1) + SEND_P;
-      s.push({ at: t, kind: "user-text", text: TEXT1 });
-      t += L; s.push({ at: t, kind: "loading-on" });
+      // 첫 메시지 이미 있음, 바로 loading
+      s.push({ at: t, kind: "loading-on" });
       t += R; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <AppleTextContent onSrc={() => openSrc("disease")} /> });
       t += N;
 
+      // 두 번째 메시지 타이핑
       s.push({ at: t, kind: "input-type", text: TEXT2, duration: TD(TEXT2) });
       t += TD(TEXT2) + SEND_P;
       s.push({ at: t, kind: "user-image", imageType: "apple", text: TEXT2 });
@@ -530,50 +553,68 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
     }
 
     else if (id === "subsidy") {
-      const SL = 300, SR = 900, SN = 600;
+      const SR = 900;
       let t = 0;
       const s: Step[] = [];
 
-      const addTurn = (userText: string, aiNode: React.ReactNode) => {
-        const typeDur = TD(userText);
-        s.push({ at: t, kind: "input-type", text: userText, duration: typeDur });
-        t += typeDur + SEND_P;
-        s.push({ at: t, kind: "user-text", text: userText });
-        t += SL; s.push({ at: t, kind: "loading-on" });
-        t += SR; s.push({ at: t, kind: "loading-off" });
-        s.push({ at: t, kind: "ai", content: aiNode });
-        t += SN;
-      };
+      // 첫 메시지 이미 있음, 바로 loading
+      s.push({ at: t, kind: "loading-on" });
+      t += SR; s.push({ at: t, kind: "loading-off" });
+      s.push({ at: t, kind: "ai-subsidy", stepIndex: 0 }); // 지역 선택
 
-      addTurn("받을 수 있는 보조금 확인하기", <SubsidyStep1Content />);
-      addTurn('"충남"', <SubsidyStep2Content />);
-      addTurn('"농업"', <SubsidyStep3Content />);
-      addTurn('"청년농업인"', <SubsidyStep4Content />);
-      addTurn('"신청 예정"', <SubsidyResultContent onSrc={() => openSrc("subsidy")} />);
+      t += 1200; // 유저가 선택하는 시간
+      s.push({ at: t, kind: "chip-select", stepIndex: 0, value: "충남" });
+
+      t += 800;
+      s.push({ at: t, kind: "loading-on" });
+      t += SR; s.push({ at: t, kind: "loading-off" });
+      s.push({ at: t, kind: "ai-subsidy", stepIndex: 1 }); // 분야 선택
+
+      t += 1000;
+      s.push({ at: t, kind: "chip-select", stepIndex: 1, value: "농업" });
+
+      t += 700;
+      s.push({ at: t, kind: "loading-on" });
+      t += SR; s.push({ at: t, kind: "loading-off" });
+      s.push({ at: t, kind: "ai-subsidy", stepIndex: 2 }); // 대상유형
+
+      t += 1000;
+      s.push({ at: t, kind: "chip-select", stepIndex: 2, value: "청년농업인" });
+
+      t += 700;
+      s.push({ at: t, kind: "loading-on" });
+      t += SR; s.push({ at: t, kind: "loading-off" });
+      s.push({ at: t, kind: "ai-subsidy", stepIndex: 3 }); // 신청 시기
+
+      t += 1000;
+      s.push({ at: t, kind: "chip-select", stepIndex: 3, value: "신청 예정" });
+
+      t += 700;
+      s.push({ at: t, kind: "loading-on" });
+      t += SR; s.push({ at: t, kind: "loading-off" });
+      s.push({ at: t, kind: "ai", content: <SubsidyResultContent onSrc={() => openSrc("subsidy")} /> });
 
       runSteps(s);
     }
 
     else if (id === "translation") {
-      const SL = 300, SR = 1100, SN = 800;
-      const TEXT1 = "내일 오전 9시부터 비강자 심기 베트남어로";
-      const TEXT2 = "그 과정 메뉴얼로 설명해줘";
+      const SR = 1100;
+      const TEXT2 = "그 과정 매뉴얼로 설명해줘";
 
       let t = 0;
       const s: Step[] = [];
 
-      s.push({ at: t, kind: "input-type", text: TEXT1, duration: TD(TEXT1) });
-      t += TD(TEXT1) + SEND_P;
-      s.push({ at: t, kind: "user-text", text: TEXT1 });
-      t += SL; s.push({ at: t, kind: "loading-on" });
+      // 첫 메시지 이미 있음, 바로 loading
+      s.push({ at: t, kind: "loading-on" });
       t += SR; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <TranslationStep1Content onSrc={() => openSrc("subsidy")} /> });
-      t += SN;
+      t += 800;
 
+      // 두 번째 메시지 타이핑
       s.push({ at: t, kind: "input-type", text: TEXT2, duration: TD(TEXT2) });
       t += TD(TEXT2) + SEND_P;
       s.push({ at: t, kind: "user-text", text: TEXT2 });
-      t += SL; s.push({ at: t, kind: "loading-on" });
+      t += L; s.push({ at: t, kind: "loading-on" });
       t += SR; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <TranslationStep2Content onSrc={() => openSrc("subsidy")} /> });
 
@@ -581,14 +622,11 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
     }
 
     else if (id === "farming") {
-      const TEXT1 = "오늘 딸기밭에 물 주고, 어제 산 비료 5킬로 사용했어.";
       let t = 0;
       const s: Step[] = [];
 
-      s.push({ at: t, kind: "input-type", text: TEXT1, duration: TD(TEXT1) });
-      t += TD(TEXT1) + SEND_P;
-      s.push({ at: t, kind: "user-text", text: TEXT1 });
-      t += L; s.push({ at: t, kind: "loading-on" });
+      // 첫 메시지 이미 있음, 바로 loading
+      s.push({ at: t, kind: "loading-on" });
       t += R; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <FarmingStep1Content onAdjust={handleFarmingAdjust} /> });
 
@@ -596,14 +634,11 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
     }
 
     else if (id === "faq") {
-      const TEXT1 = "자주 묻는 질문 알려줘";
       let t = 0;
       const s: Step[] = [];
 
-      s.push({ at: t, kind: "input-type", text: TEXT1, duration: TD(TEXT1) });
-      t += TD(TEXT1) + SEND_P;
-      s.push({ at: t, kind: "user-text", text: TEXT1 });
-      t += L; s.push({ at: t, kind: "loading-on" });
+      // 첫 메시지 이미 있음, 바로 loading
+      s.push({ at: t, kind: "loading-on" });
       t += R; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <FaqContent onVoice={() => setShowVoice(true)} /> });
 
@@ -628,16 +663,29 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
     setInputValue("");
   }
 
-  // Mount 시 scenario prop으로 플로우 시작 (key prop 변경으로 리마운트 처리됨)
+  // Mount 시 첫 메시지 즉시 추가 + flow 시작
   useEffect(() => {
-    if (scenario) {
-      triggerFlow(scenario);
+    if (!scenario) return;
+
+    // 첫 메시지 즉시 추가 (딸기 제외)
+    const firstMsg = SCENARIO_FIRST_MESSAGES[scenario];
+    if (firstMsg.kind === "text") {
+      setMessages([{ id: crypto.randomUUID(), kind: "user-text", text: firstMsg.text, ts: getTimestamp() }]);
+    } else {
+      setMessages([]);
     }
+
+    setActiveFlow(scenario);
+    triggerFlow(scenario);
+
     return () => {
       clearAll();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // suppress unused var warning
+  void activeFlow;
 
   return (
     <div
@@ -656,7 +704,7 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
 
         {messages.map((msg) => (
           <FadeIn key={msg.id} delay={0}>
-            <div className={`mb-[20px] flex ${msg.kind === "ai" ? "justify-start" : "justify-end"}`}>
+            <div className={`mb-[20px] flex ${msg.kind === "ai" || msg.kind === "ai-subsidy" ? "justify-start" : "justify-end"}`}>
               {msg.kind === "user-text" && (
                 <UserMessageBubble message={msg.text!} timestamp={msg.ts} />
               )}
@@ -667,6 +715,15 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
                 <ChatContainer timestamp={msg.ts}>
                   <AIResponseHeader />
                   {msg.content}
+                </ChatContainer>
+              )}
+              {msg.kind === "ai-subsidy" && (
+                <ChatContainer timestamp={msg.ts}>
+                  <AIResponseHeader />
+                  {msg.subsidyStepIndex === 0 && <SubsidyStep1Content selected={subsidySelections[0]} />}
+                  {msg.subsidyStepIndex === 1 && <SubsidyStep2Content selected={subsidySelections[1]} />}
+                  {msg.subsidyStepIndex === 2 && <SubsidyStep3Content selected={subsidySelections[2]} />}
+                  {msg.subsidyStepIndex === 3 && <SubsidyStep4Content selected={subsidySelections[3]} />}
                 </ChatContainer>
               )}
             </div>
