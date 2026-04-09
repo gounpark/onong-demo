@@ -64,7 +64,8 @@ type Step =
   | { at: number; kind: "panel-open" }
   | { at: number; kind: "panel-close" }
   | { at: number; kind: "panel-highlight"; option: "camera" | "image" | "file" }
-  | { at: number; kind: "panel-image-preview"; imageType: "apple" | "strawberry-fruit" | "strawberry-leaf" };
+  | { at: number; kind: "panel-image-preview"; imageType: "apple" | "strawberry-fruit" | "strawberry-leaf" }
+  | { at: number; kind: "open-source-sheet"; srcType: "disease" | "subsidy" };
 
 // ─── Scenario first messages ──────────────────────────────────────────────────
 const SCENARIO_FIRST_MESSAGES: Record<ScenarioType, { kind: "text"; text: string } | { kind: "none" }> = {
@@ -212,7 +213,7 @@ function SubsidyResultContent({ onSrc }: { onSrc: () => void }) {
   );
 }
 
-function TranslationStep1Content({ onSrc }: { onSrc: () => void }) {
+function TranslationStep1Content() {
   return (
     <div className="flex flex-col gap-[12px] w-full">
       <AITextResponse><p>베트남어로 안내 드릴게요.</p></AITextResponse>
@@ -221,12 +222,11 @@ function TranslationStep1Content({ onSrc }: { onSrc: () => void }) {
         targetText="Từ 9 giờ sáng mai, bắt đầu trồng khoai tây gừng."
         sourceText="내일 오전 9시부터 비강자 심기"
       />
-      <SourceBadge onOpen={onSrc} type="subsidy" />
     </div>
   );
 }
 
-function TranslationStep2Content({ onSrc }: { onSrc: () => void }) {
+function TranslationStep2Content() {
   return (
     <div className="flex flex-col gap-[12px] w-full">
       <AITextResponse><p>베트남어로 안내 드릴게요.</p></AITextResponse>
@@ -235,7 +235,6 @@ function TranslationStep2Content({ onSrc }: { onSrc: () => void }) {
         targetText={"Quản lý OOO sẽ giải thích cách trồng vào ngày mai:\n1. Hãy sử dụng khoai tây gừng đã mọc mầm.\n2. Đào lỗ cách nhau khoảng 30cm.\n3. Đặt khoai vào lỗ rồi lấp đất lại.\n4. Tưới nước đầy đủ."}
         sourceText={"OOO매니저 내일 심는 법:\n1. 싹이 튼 비강자를 사용해.\n2. 30cm 간격으로 줄에 놓고 심어줘.\n3. 뿌리 넣고 흙으로 덮어줘.\n4. 물을 충분히 줘."}
       />
-      <SourceBadge onOpen={onSrc} type="subsidy" />
     </div>
   );
 }
@@ -453,12 +452,14 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
             next[step.stepIndex] = step.value;
             return next;
           });
+          addMsg({ kind: "user-text", text: step.value });
           return;
         }
         if (step.kind === "panel-open") { setIsExpanded(true); return; }
         if (step.kind === "panel-close") { setIsExpanded(false); setHighlightedPanel(null); return; }
         if (step.kind === "panel-highlight") { setHighlightedPanel(step.option); return; }
         if (step.kind === "panel-image-preview") { setPendingImageType(step.imageType); return; }
+        if (step.kind === "open-source-sheet") { openSrc(step.srcType); return; }
         if (step.kind === "input-clear") { setInputValue(""); return; }
         if (step.kind === "input-type") {
           if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
@@ -498,13 +499,25 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       s.push({ at: t, kind: "ai", content: <AppleTextContent onSrc={() => openSrc("disease")} /> });
       t += N;
 
-      // 두 번째 메시지 타이핑
+      // 두 번째 메시지: 패널 열기 → 하이라이트 → 닫기 → 이미지 프리뷰 → 타이핑 → 전송
+      s.push({ at: t, kind: "panel-open" });
+      t += 500;
+      s.push({ at: t, kind: "panel-highlight", option: "image" });
+      t += 600;
+      s.push({ at: t, kind: "panel-close" });
+      t += 300;
+      s.push({ at: t, kind: "panel-image-preview", imageType: "apple" });
+      t += 200;
       s.push({ at: t, kind: "input-type", text: TEXT2, duration: TD(TEXT2) });
       t += TD(TEXT2) + SEND_P;
       s.push({ at: t, kind: "user-image", imageType: "apple", text: TEXT2 });
       t += L; s.push({ at: t, kind: "loading-on" });
       t += R; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <AppleDiagnosisContent onSrc={() => openSrc("disease")} /> });
+
+      // 답변 출처 버튼 탭 플로우
+      t += 3000;
+      s.push({ at: t, kind: "open-source-sheet", srcType: "disease" });
 
       runSteps(s);
     }
@@ -548,6 +561,10 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       t += L; s.push({ at: t, kind: "loading-on" });
       t += R; s.push({ at: t, kind: "loading-off" });
       s.push({ at: t, kind: "ai", content: <StrawberryStage2Content onSrc={() => openSrc("disease")} /> });
+
+      // 답변 출처 버튼 탭 플로우
+      t += 3000;
+      s.push({ at: t, kind: "open-source-sheet", srcType: "disease" });
 
       runSteps(s);
     }
@@ -607,7 +624,7 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       // 첫 메시지 이미 있음, 바로 loading
       s.push({ at: t, kind: "loading-on" });
       t += SR; s.push({ at: t, kind: "loading-off" });
-      s.push({ at: t, kind: "ai", content: <TranslationStep1Content onSrc={() => openSrc("subsidy")} /> });
+      s.push({ at: t, kind: "ai", content: <TranslationStep1Content /> });
       t += 800;
 
       // 두 번째 메시지 타이핑
@@ -616,7 +633,7 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       s.push({ at: t, kind: "user-text", text: TEXT2 });
       t += L; s.push({ at: t, kind: "loading-on" });
       t += SR; s.push({ at: t, kind: "loading-off" });
-      s.push({ at: t, kind: "ai", content: <TranslationStep2Content onSrc={() => openSrc("subsidy")} /> });
+      s.push({ at: t, kind: "ai", content: <TranslationStep2Content /> });
 
       runSteps(s);
     }

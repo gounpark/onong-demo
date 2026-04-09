@@ -30,7 +30,7 @@ export function SourceBadge({ onOpen, type = "disease" }: SourceBadgeProps) {
           />
         ))}
       </div>
-      <p style={{ ...P, fontWeight: 400, fontSize: 12, color: "#666" }}>GN농s 답변 출처</p>
+      <p style={{ ...P, fontWeight: 400, fontSize: 12, color: "#666" }}>답변 출처</p>
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
         <path d="M3.5 2L6.5 5L3.5 8" stroke="#bbb" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
