@@ -454,18 +454,22 @@ export function ChatDemo({ scenario, onBack, onFlowComplete, showBackTooltip }: 
     timers.current.push(t);
   }
 
-  // auto-scroll: 새 메시지 상단부터 보이도록 / 로딩은 하단으로
+  // auto-scroll: 새 메시지 상단부터 보인 뒤 하단으로 자동 스크롤
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
     if (isLoading) {
-      // 로딩 인디케이터는 항상 보이게 하단 스크롤
       container.scrollTop = container.scrollHeight;
       return;
     }
     if (lastMsgRef.current) {
-      // 새 메시지의 맨 위부터 읽을 수 있도록
+      // 1) 새 메시지 맨 위를 즉시 보여주고
       lastMsgRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      // 2) 잠시 후 하단까지 부드럽게 스크롤
+      const t = setTimeout(() => {
+        container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+      }, 600);
+      return () => clearTimeout(t);
     }
   }, [messages, isLoading]);
 
@@ -606,9 +610,7 @@ export function ChatDemo({ scenario, onBack, onFlowComplete, showBackTooltip }: 
       let t = 0;
       const s: Step[] = [];
 
-      // 첫 번째 이미지: 홈 패널 완료 후 채팅 진입 → 이미지 프리뷰 바로 표시 → 타이핑 → 전송
-      s.push({ at: t, kind: "panel-image-preview", imageType: "strawberry-fruit" });
-      t += 200;
+      // 첫 번째 이미지: 채팅 진입 시 이미 이미지 첨부된 상태 → 바로 타이핑 → 전송
       s.push({ at: t, kind: "input-type", text: TEXT1, duration: TD(TEXT1) });
       t += TD(TEXT1) + SEND_P;
       s.push({ at: t, kind: "user-image", imageType: "strawberry-fruit", text: TEXT1 });
@@ -780,6 +782,11 @@ export function ChatDemo({ scenario, onBack, onFlowComplete, showBackTooltip }: 
       setMessages([]);
     }
 
+    // 딸기: 채팅 시작 시 이미지가 이미 첨부된 상태로 시작
+    if (scenario === "strawberry") {
+      setPendingImageType("strawberry-fruit");
+    }
+
     setActiveFlow(scenario);
     triggerFlow(scenario);
 
@@ -882,11 +889,12 @@ export function ChatDemo({ scenario, onBack, onFlowComplete, showBackTooltip }: 
       {showVoice && <VoiceOverlay onClose={() => setShowVoice(false)} transcriptionText={inputValue || undefined} />}
       {showSources && <SourceSheet onClose={() => setShowSources(false)} type={srcType} />}
 
-      {/* Back button tooltip for mobile */}
-      {showBackTooltip && (
+      {/* Back button tooltip for mobile — 출처 바텀시트 열릴 때는 숨김 */}
+      {showBackTooltip && !showSources && (
         <div
-          className="absolute z-40 pointer-events-none"
+          className="absolute z-40 cursor-pointer"
           style={{ top: 74, left: 10 }}
+          onClick={onBack}
         >
           {/* Arrow pointing up to back button */}
           <div style={{
