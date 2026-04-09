@@ -184,23 +184,25 @@ export default function App() {
       <Header />
       <HeroSection onChipClick={handleChipClick} />
       <SuggestedQuestions onQuestionClick={handleQuestionClick} />
-      <HomeBottomInput
-        isExpanded={isInputExpanded}
-        onToggleExpanded={() => setIsInputExpanded(!isInputExpanded)}
-        highlightedOption={homeHighlightedPanel}
-        pendingImageType={homePendingImageType}
-        onSend={(value) => {
-          const lower = value.toLowerCase();
-          let id: ScenarioType = "apple";
-          if (lower.includes("딸기")) id = "strawberry";
-          else if (lower.includes("보조금")) id = "subsidy";
-          else if (lower.includes("일지")) id = "farming";
-          else if (lower.includes("자주")) id = "faq";
-          handleScenarioSelect(id);
-        }}
-        typingText={typingText}
-        isTyping={isTyping}
-      />
+      <div className="absolute bottom-0 left-0 right-0">
+        <HomeBottomInput
+          isExpanded={isInputExpanded}
+          onToggleExpanded={() => setIsInputExpanded(!isInputExpanded)}
+          highlightedOption={homeHighlightedPanel}
+          pendingImageType={homePendingImageType}
+          onSend={(value) => {
+            const lower = value.toLowerCase();
+            let id: ScenarioType = "apple";
+            if (lower.includes("딸기")) id = "strawberry";
+            else if (lower.includes("보조금")) id = "subsidy";
+            else if (lower.includes("일지")) id = "farming";
+            else if (lower.includes("자주")) id = "faq";
+            handleScenarioSelect(id);
+          }}
+          typingText={typingText}
+          isTyping={isTyping}
+        />
+      </div>
       {showHomeVoice && (
         <VoiceOverlay
           onClose={() => { clearHomeTimers(); setShowHomeVoice(false); setHomeVoiceText(""); }}

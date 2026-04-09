@@ -275,40 +275,36 @@ function FarmingStep1Content({
       <Divider />
       <div className="flex flex-col gap-[10px]">
         <AlertCard emoji="⚡️" title="주의" message="다음 주 화요일에는 비가 내릴 예정입니다. ☔ 후속 물주기 날짜를 수요일로 조정하시겠어요?" />
-        <div className="flex gap-[8px]">
-          {/* 네 버튼 */}
+        <div className="flex flex-wrap gap-[6px]">
+          {/* 네 버튼 — ChipGroup 동일 스타일 */}
           <button
             onClick={() => onChoose("yes")}
             disabled={chosen && farmingChoice !== "yes"}
-            className={`flex items-center justify-center px-[14px] py-[9px] rounded-[8px] border transition-all duration-200 ${
-              farmingChoice === "yes"
-                ? "border-[#3170e2] bg-[#3170e2]"
-                : chosen
-                ? "border-[#e0e0e0] bg-[#f5f5f5] opacity-40"
-                : "border-[#3170e2] bg-[#ebf1ff] hover:bg-[#dce8ff]"
-            }`}
+            className="px-[12px] py-[7px] rounded-full border transition-all duration-150"
+            style={{
+              borderColor: farmingChoice === "yes" ? "#3170e2" : chosen ? "#e0e0e0" : "#ddd",
+              background: farmingChoice === "yes" ? "#ebf1ff" : chosen ? "#f5f5f5" : "white",
+              opacity: chosen && farmingChoice !== "yes" ? 0.4 : 1,
+            }}
           >
-            <span style={{
-              ...P, fontWeight: 600, fontSize: 13,
-              color: farmingChoice === "yes" ? "white" : chosen ? "#aaa" : "#3170e2",
-            }}>네, 수요일로 조정할게요</span>
+            <p style={{ ...P, fontWeight: farmingChoice === "yes" ? 600 : 400, fontSize: 13, lineHeight: 1, color: farmingChoice === "yes" ? "#3170e2" : chosen ? "#bbb" : "#444" }}>
+              네, 수요일로 조정할게요
+            </p>
           </button>
           {/* 아니오 버튼 */}
           <button
             onClick={() => onChoose("no")}
             disabled={chosen && farmingChoice !== "no"}
-            className={`flex items-center justify-center px-[14px] py-[9px] rounded-[8px] border transition-all duration-200 ${
-              farmingChoice === "no"
-                ? "border-[#888] bg-[#efefef]"
-                : chosen
-                ? "border-[#e0e0e0] bg-[#f5f5f5] opacity-40"
-                : "border-[#ddd] bg-white hover:bg-[#f5f5f5]"
-            }`}
+            className="px-[12px] py-[7px] rounded-full border transition-all duration-150"
+            style={{
+              borderColor: farmingChoice === "no" ? "#3170e2" : chosen ? "#e0e0e0" : "#ddd",
+              background: farmingChoice === "no" ? "#ebf1ff" : chosen ? "#f5f5f5" : "white",
+              opacity: chosen && farmingChoice !== "no" ? 0.4 : 1,
+            }}
           >
-            <span style={{
-              ...P, fontWeight: 500, fontSize: 13,
-              color: farmingChoice === "no" ? "#444" : chosen ? "#aaa" : "#666",
-            }}>아니오</span>
+            <p style={{ ...P, fontWeight: farmingChoice === "no" ? 600 : 400, fontSize: 13, lineHeight: 1, color: farmingChoice === "no" ? "#3170e2" : chosen ? "#bbb" : "#444" }}>
+              아니오
+            </p>
           </button>
         </div>
       </div>
@@ -583,7 +579,7 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       s.push({ at: t, kind: "ai-apple-diagnosis" });
 
       // 답변 출처 버튼 탭 플로우
-      t += 3000;
+      t += 1500;
       s.push({ at: t, kind: "open-source-sheet", srcType: "disease" });
 
       runSteps(s);
@@ -618,7 +614,7 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
       s.push({ at: t, kind: "ai-strawberry-stage2" });
 
       // 답변 출처 버튼 탭 플로우
-      t += 3000;
+      t += 1500;
       s.push({ at: t, kind: "open-source-sheet", srcType: "disease" });
 
       runSteps(s);
