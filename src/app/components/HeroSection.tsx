@@ -149,10 +149,10 @@ export function HeroSection({ onChipClick }: { onChipClick?: (label: string) => 
               <p className="leading-[1.5]" style={{ fontFamily: "'Pretendard', sans-serif", fontWeight: 700 }}>{`이 당신의 `}</p>
             </div>
           </div>
-          <div className="flex flex-col font-['Pretendard:SemiBold',sans-serif] justify-center leading-[0] not-italic relative shrink-0 text-[0px] text-white whitespace-nowrap">
+          <div className="flex flex-col justify-center leading-[0] not-italic relative shrink-0 text-[0px] text-white whitespace-nowrap">
             <p className="text-[22px]">
-              <span className="font-['Pretendard:Bold',sans-serif] leading-[1.5]">궁금증을 해결</span>
-              <span className="font-['Pretendard:Regular',sans-serif] leading-[1.5]">해드릴게요!</span>
+              <span style={{ fontFamily: "'Pretendard', sans-serif", fontWeight: 700, lineHeight: 1.5 }}>궁금증을 해결</span>
+              <span style={{ fontFamily: "'Pretendard', sans-serif", fontWeight: 400, lineHeight: 1.5 }}>해드릴게요!</span>
             </p>
           </div>
         </div>

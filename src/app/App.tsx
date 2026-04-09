@@ -155,6 +155,9 @@ export default function App() {
 
   const handleBack = () => {
     setShowChat(false);
+    if (isMobile) {
+      setActiveScenario(null); // 모바일에서는 시나리오 선택 화면으로 돌아감
+    }
   };
 
   const handleQuestionClick = (question: string) => {
@@ -224,9 +227,68 @@ export default function App() {
   // ── Mobile layout ────────────────────────────────────────────────────────────
   if (isMobile) {
     if (showChat) {
-      return <div style={{ width: "100%" }}>{chatView}</div>;
+      return <div style={{ width: "100%", maxWidth: 430 }}>{chatView}</div>;
     }
-    return <div style={{ width: 375 }}>{homeView}</div>;
+    // 모바일 첫 화면: 시나리오 선택
+    return (
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 430,
+          minHeight: "100dvh",
+          background: "white",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* 헤더 영역 */}
+        <div style={{ background: "#3170e2", padding: "52px 24px 28px" }}>
+          <p style={{ ...P, fontWeight: 400, fontSize: 16, color: "rgba(255,255,255,0.8)", marginBottom: 4 }}>
+            안녕하세요!
+          </p>
+          <p style={{ ...P, fontWeight: 700, fontSize: 22, color: "white", lineHeight: 1.4 }}>
+            오농 에이전트가<br />도와드릴게요 🌱
+          </p>
+          <p style={{ ...P, fontWeight: 400, fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 8 }}>
+            체험할 시나리오를 선택해보세요
+          </p>
+        </div>
+
+        {/* 시나리오 버튼 목록 */}
+        <div style={{ flex: 1, padding: "20px 20px 40px", display: "flex", flexDirection: "column", gap: 12 }}>
+          {FLOW_BUTTONS.map(btn => (
+            <button
+              key={btn.id}
+              onClick={() => {
+                setActiveScenario(btn.id);
+                setShowChat(true);
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                padding: "18px 20px",
+                borderRadius: 16,
+                border: "1.5px solid #eee",
+                background: "white",
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "background 0.15s",
+                width: "100%",
+              }}
+            >
+              <span style={{ fontSize: 32, lineHeight: 1 }}>{btn.emoji}</span>
+              <div>
+                <p style={{ ...P, fontWeight: 600, fontSize: 16, color: "#111" }}>{btn.label}</p>
+                <p style={{ ...P, fontWeight: 400, fontSize: 12, color: "#aaa", marginTop: 2 }}>
+                  {SCENARIO_HOME_TEXT[btn.id]}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   // ── Desktop layout ───────────────────────────────────────────────────────────
