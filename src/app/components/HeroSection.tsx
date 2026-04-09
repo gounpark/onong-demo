@@ -145,8 +145,8 @@ export function HeroSection({ onChipClick }: { onChipClick?: (label: string) => 
         <div className="content-stretch flex flex-col items-start relative shrink-0">
           <div className="content-stretch flex gap-[2px] h-[31px] items-center justify-center relative shrink-0">
             <AgentIcon />
-            <div className="flex flex-col font-['Pretendard:Bold',sans-serif] justify-center leading-[0] not-italic relative shrink-0 text-[22px] text-white whitespace-nowrap">
-              <p className="leading-[1.5]">{`이 당신의 `}</p>
+            <div className="flex flex-col justify-center leading-[0] not-italic relative shrink-0 text-[22px] text-white whitespace-nowrap">
+              <p className="leading-[1.5]" style={{ fontFamily: "'Pretendard', sans-serif", fontWeight: 700 }}>{`이 당신의 `}</p>
             </div>
           </div>
           <div className="flex flex-col font-['Pretendard:SemiBold',sans-serif] justify-center leading-[0] not-italic relative shrink-0 text-[0px] text-white whitespace-nowrap">

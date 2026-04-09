@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import svgPaths from "../../imports/svg-rv1bmyf9dl";
 import imgApple from "../../assets/apple-hand.png";
 import imgStrawberryFruit from "../../assets/strawberry-fruit.png";
@@ -152,8 +153,17 @@ export function BottomInput({
   pendingImageType,
 }: BottomInputProps) {
   const hasText = inputValue.trim().length > 0;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Auto-grow textarea up to ~3 lines
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 72) + "px";
+  }, [inputValue]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (onInputChange) {
       onInputChange(e.target.value);
     }
@@ -165,14 +175,15 @@ export function BottomInput({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && hasText && onSend) {
-      onSend();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (hasText && onSend) onSend();
     }
   };
 
   return (
-    <div className="absolute bg-white content-stretch flex flex-col gap-[10px] items-center left-0 bottom-0 pb-[32px] pt-[20px] px-[16px] shadow-[0px_-2px_10px_0px_rgba(221,221,221,0.2)] w-[375px]">
+    <div className="bg-white content-stretch flex flex-col gap-[10px] items-center pb-[32px] pt-[16px] px-[16px] shadow-[0px_-2px_10px_0px_rgba(221,221,221,0.2)] w-full">
       {/* Upload Options - Shown when expanded */}
       {isExpanded && (
         <div
@@ -223,13 +234,15 @@ export function BottomInput({
                   />
                 </div>
               )}
-              <input
-                type="text"
+              <textarea
+                ref={textareaRef}
+                rows={1}
                 value={inputValue}
                 onChange={handleInputChange}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyDown}
                 placeholder="질문을 입력해 보세요"
-                className="font-['Pretendard:Regular',sans-serif] leading-[normal] not-italic flex-1 bg-transparent outline-none text-[#222] placeholder:text-[#999] text-[14px] border-none"
+                className="font-['Pretendard:Regular',sans-serif] leading-[1.5] not-italic flex-1 bg-transparent outline-none text-[#222] placeholder:text-[#999] text-[14px] border-none resize-none overflow-hidden"
+                style={{ minHeight: 20 }}
               />
               <div className="content-stretch flex gap-[16px] items-center relative shrink-0">
                 <div className="cursor-pointer" onClick={onMicClick}>

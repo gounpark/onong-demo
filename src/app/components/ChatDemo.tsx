@@ -769,16 +769,18 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
 
   return (
     <div
-      className="bg-white relative overflow-hidden flex flex-col"
-      style={{ width: 375, height: 812, paddingTop: 46 }}
+      className="bg-white relative overflow-hidden"
+      style={{ width: 375, height: 812 }}
     >
       <ChatHeader onBack={onBack} />
+
+      {/* Flex layout below header */}
+      <div className="absolute left-0 right-0 bottom-0 flex flex-col" style={{ top: 70 }}>
 
       {/* Chat area */}
       <div
         ref={scrollRef}
-        className="absolute left-0 right-0 overflow-y-auto px-[16px] py-[16px]"
-        style={{ top: 70, bottom: 110 }}
+        className="flex-1 overflow-y-auto px-[16px] py-[16px]"
       >
         {messages.length === 0 && !isLoading && <EmptyState />}
 
@@ -847,6 +849,7 @@ export function ChatDemo({ scenario, onBack }: ChatDemoProps) {
         highlightedOption={highlightedPanel}
         pendingImageType={pendingImageType}
       />
+      </div>{/* end flex column */}
 
       {showVoice && <VoiceOverlay onClose={() => setShowVoice(false)} transcriptionText={inputValue || undefined} />}
       {showSources && <SourceSheet onClose={() => setShowSources(false)} type={srcType} />}
